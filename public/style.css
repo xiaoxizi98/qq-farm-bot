@@ -81,6 +81,10 @@ main {
     min-height: 0; /* Allow shrinking */
 }
 
+main.scrollable {
+    overflow-y: auto;
+}
+
 /* Cards */
 .card {
     background-color: var(--card-bg);

@@ -8,7 +8,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start-web": "node server.js"
+    "start": "node server.js"
   },
   "dependencies": {
     "body-parser": "^2.2.2",
