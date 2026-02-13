@@ -1,0 +1,372 @@
+:root {
+    --bg-color: #0d1117;
+    --card-bg: rgba(22, 27, 34, 0.8);
+    --primary-color: #2ea043; /* GitHub Green */
+    --text-color: #c9d1d9;
+    --accent-color: #58a6ff;
+    --danger-color: #da3633;
+    --border-radius: 12px;
+    --glass-border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+* { box-sizing: border-box; }
+
+html { height: 100%; }
+
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden; /* No global scroll */
+}
+
+/* Header */
+header {
+    background-color: var(--card-bg);
+    padding: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: var(--glass-border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+}
+
+header h1 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: var(--primary-color);
+}
+
+.status-badge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    background-color: rgba(110, 118, 129, 0.4);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.status-badge.running {
+    background-color: rgba(46, 160, 67, 0.2);
+    color: var(--primary-color);
+    border: 1px solid var(--primary-color);
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: currentColor;
+    box-shadow: 0 0 8px currentColor;
+}
+
+/* Main Layout */
+main {
+    flex: 1;
+    padding: 1rem;
+    overflow: hidden; /* Prevent page scroll */
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    min-height: 0; /* Allow shrinking */
+}
+
+/* Cards */
+.card {
+    background-color: var(--card-bg);
+    border: var(--glass-border);
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Farm Grid */
+.farm-grid {
+    display: grid; /* Changed from flex to grid */
+    grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)); /* Responsive grid */
+    gap: 10px;
+    width: 100%; /* Ensure it takes full width */
+}
+
+.land-slot {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    position: relative;
+    border: 1px solid transparent;
+    transition: all 0.2s;
+}
+
+/* User Card (New) */
+.user-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+}
+
+.user-info {
+    flex: 1;
+    display: flex;
+    flex-wrap: wrap; /* Allow content to wrap if needed */
+    align-items: center;
+    gap: 0.5rem; /* Smaller gap for compact display */
+    font-size: 0.9rem; /* Slightly smaller font for compactness */
+}
+
+.user-info .stat-item {
+    white-space: nowrap; /* Prevent individual stats from breaking */
+}
+
+.user-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 80px;
+}
+
+/* Compact Buttons */
+.btn-compact {
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: bold;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.05);
+    border: var(--glass-border);
+    color: white;
+    cursor: pointer;
+    transition: background 0.2s;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.btn-compact:active {
+    transform: scale(0.96);
+}
+
+.btn-start {
+    background: rgba(46, 160, 67, 0.2);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.btn-stop {
+    background: rgba(218, 54, 51, 0.2);
+    border-color: var(--danger-color);
+    color: var(--danger-color);
+}
+
+.btn-settings {
+    color: var(--text-color);
+}
+
+/* Farm Scroll */
+.farm-scroll-container {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 4px; /* Space for scrollbar */
+    min-height: 0; /* Important for nested flex scroll */
+}
+
+/* Custom Scrollbar for Farm */
+.farm-scroll-container::-webkit-scrollbar {
+    width: 6px;
+}
+.farm-scroll-container::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+}
+.farm-scroll-container::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+}
+
+/* Log Content */
+.log-drawer-content {
+    background: #000;
+    color: #4fce4f;
+    font-family: 'Consolas', monospace;
+    font-size: 0.8rem;
+    padding: 10px;
+    flex: 1;
+    overflow-y: auto;
+    border-radius: 6px;
+    border: 1px solid #333;
+}
+
+.log-entry {
+    margin-bottom: 2px;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+/* Forms */
+.form-group {
+    margin-bottom: 1rem;
+}
+
+label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--text-color);
+}
+
+input[type="text"], input[type="password"], input[type="number"] {
+    width: 100%;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    color: white;
+    font-size: 1rem;
+    box-sizing: border-box;
+}
+
+input:focus {
+    border-color: var(--accent-color);
+    outline: none;
+}
+
+.toggle-switch {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+/* Switch UI */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 28px;
+}
+
+.switch input { 
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #333;
+  transition: .4s;
+  border-radius: 34px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 20px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: var(--primary-color);
+}
+
+input:checked + .slider:before {
+  transform: translateX(22px);
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Login Page Only */
+.login-container {
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 1rem;
+}
+
+.login-box {
+    width: 100%;
+    max-width: 400px;
+    background: var(--card-bg);
+    padding: 2rem;
+    border-radius: 16px;
+    border: var(--glass-border);
+    text-align: center;
+}
+
+.login-btn {
+    width: 100%;
+    padding: 12px;
+    background: var(--primary-color);
+    border: none;
+    border-radius: 6px;
+    color: white;
+    font-size: 1rem;
+    font-weight: bold;
+    margin-top: 1rem;
+    cursor: pointer;
+}
+
+/* Toast Styles */
+.toast {
+    visibility: hidden;
+    min-width: 250px;
+    background-color: rgba(30, 30, 30, 0.95);
+    color: #fff;
+    text-align: center;
+    border-radius: 8px;
+    padding: 12px 20px;
+    position: fixed;
+    z-index: 2000;
+    left: 50%;
+    bottom: 30px;
+    transform: translateX(-50%);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.1);
+    font-size: 0.9rem;
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.toast.show {
+    visibility: visible;
+    opacity: 1;
+    bottom: 50px;
+}
+
+.toast.success { border-left: 4px solid #2ea043; } /* Primary Green */
+.toast.error { border-left: 4px solid #da3633; } /* Danger Red */
+
+/* Nav Bar (Bottom for Mobile) */
+.nav-bar {
+    display: none; /* Desktop hidden, use header maybe? Or just buttons */
+}

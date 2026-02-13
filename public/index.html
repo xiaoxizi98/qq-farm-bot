@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Antigravity Farm Bot</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+    <header>
+        <h1>Farm Bot</h1>
+        <div style="display: flex; gap: 15px; align-items: center;">
+            <div id="statusBadgeCompact" class="status-badge" style="margin-right: 5px;">
+                <span class="status-dot"></span> <span id="statusText">离线</span>
+            </div>
+            <a href="settings.html" style="text-decoration: none; color: #58a6ff; font-size: 0.9rem;">⚙️ 配置 & 控制</a>
+            <button id="logoutBtn" style="background:none;border:none;color:#58a6ff;font-size:0.9rem;cursor:pointer;">退出</button>
+        </div>
+    </header>
+
+    <main>
+        <!-- User Profile -->
+        <div class="card user-card">
+            <div class="user-info" style="justify-content: space-between; width: 100%;">
+                <div style="display: flex; gap: 10px; align-items: center; font-family: monospace; font-size: 1rem;">
+                    <div>
+                        <span id="userName" style="font-weight: bold; color: white;">-</span> 
+                        <span style="color: #4fce4f;">|</span> 
+                        <span id="userLevel" style="color: #4fce4f;">0</span>
+                        <span style="color: #4fce4f;">|</span>
+                        <span id="userGold" style="color: #ffd700;">0</span>
+                        <span style="color: #4fce4f;">|</span>
+                        <span id="userExp">0/0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Farm View -->
+        <div class="card farm-section" style="display: flex; flex-direction: column; flex: 0 1 auto; max-height: 45vh; overflow: hidden; min-height: 200px;">
+            <h3 style="margin-top: 0; margin-bottom: 10px; font-size: 1rem; color: var(--text-color);">我的农场</h3>
+            <div class="farm-scroll-container">
+                <div class="farm-grid" id="farmGrid">
+                    <!-- Slots will be injected here -->
+                    <div style="grid-column: 1/-1; text-align: center; padding: 20px; color: #666;">
+                        等待数据更新...
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Logs Extended -->
+        <div class="card log-section" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; margin-bottom: 0; min-height: 0;">
+             <h3 style="margin-top: 0; margin-bottom: 5px; font-size: 1rem; color: var(--text-color);">运行日志</h3>
+             <div class="log-drawer-content" id="logDrawer">
+                <div class="log-entry">Waiting for logs...</div>
+             </div>
+        </div>
+    </main>
+
+    <script src="toast.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

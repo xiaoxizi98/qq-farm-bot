@@ -34,12 +34,6 @@ const OP_NAMES = {
     10008: '偷菜',
 };
 
-// 配置: 是否只在有经验时才帮助好友  
-const HELP_ONLY_WITH_EXP = true; // !!!无效，暂时无法判断。有修复方法但是暂时没打算更新出来
-
-// 配置: 是否启用放虫放草功能
-const ENABLE_PUT_BAD_THINGS = false;  // 无效！！！开启后会多次访问朋友导致被拉黑 请勿更改暂时关闭放虫放草功能
-
 // ============ 好友 API ============
 
 async function getAllFriends() {
@@ -343,7 +337,7 @@ async function visitFriend(friend, totalActions, myGid) {
     }
 
     const status = analyzeFriendLands(lands, myGid, name);
-    
+
     if (showDebug) {
         console.log(`  [${name}] 分析结果: 可偷=${status.stealable.length} 浇水=${status.needWater.length} 除草=${status.needWeed.length} 除虫=${status.needBug.length}`);
         console.log(`========== 调试结束 ==========\n`);
@@ -354,7 +348,7 @@ async function visitFriend(friend, totalActions, myGid) {
 
     // 帮助操作: 只在有经验时执行 (如果启用了 HELP_ONLY_WITH_EXP)
     if (status.needWeed.length > 0) {
-        const shouldHelp = !HELP_ONLY_WITH_EXP || canGetExp(10005);  // 10005=除草
+        const shouldHelp = !CONFIG.helpOnlyWithExp || canGetExp(10005);  // 10005=除草
         if (shouldHelp) {
             let ok = 0;
             for (const landId of status.needWeed) {
@@ -366,7 +360,7 @@ async function visitFriend(friend, totalActions, myGid) {
     }
 
     if (status.needBug.length > 0) {
-        const shouldHelp = !HELP_ONLY_WITH_EXP || canGetExp(10006);  // 10006=除虫
+        const shouldHelp = !CONFIG.helpOnlyWithExp || canGetExp(10006);  // 10006=除虫
         if (shouldHelp) {
             let ok = 0;
             for (const landId of status.needBug) {
@@ -378,7 +372,7 @@ async function visitFriend(friend, totalActions, myGid) {
     }
 
     if (status.needWater.length > 0) {
-        const shouldHelp = !HELP_ONLY_WITH_EXP || canGetExp(10007);  // 10007=浇水
+        const shouldHelp = !CONFIG.helpOnlyWithExp || canGetExp(10007);  // 10007=浇水
         if (shouldHelp) {
             let ok = 0;
             for (const landId of status.needWater) {
@@ -412,7 +406,7 @@ async function visitFriend(friend, totalActions, myGid) {
     }
 
     // 捣乱操作: 放虫(10004)/放草(10003)
-    if (ENABLE_PUT_BAD_THINGS && status.canPutBug.length > 0 && canOperate(10004)) {
+    if (CONFIG.enablePutBadThings && status.canPutBug.length > 0 && canOperate(10004)) {
         let ok = 0;
         const remaining = getRemainingTimes(10004);
         const toProcess = status.canPutBug.slice(0, remaining);
@@ -424,7 +418,7 @@ async function visitFriend(friend, totalActions, myGid) {
         if (ok > 0) { actions.push(`放虫${ok}`); totalActions.putBug += ok; }
     }
 
-    if (ENABLE_PUT_BAD_THINGS && status.canPutWeed.length > 0 && canOperate(10003)) {
+    if (CONFIG.enablePutBadThings && status.canPutWeed.length > 0 && canOperate(10003)) {
         let ok = 0;
         const remaining = getRemainingTimes(10003);
         const toProcess = status.canPutWeed.slice(0, remaining);
@@ -467,7 +461,7 @@ async function checkFriends() {
         const priorityFriends = [];  // 有可偷/可帮助的好友
         const otherFriends = [];     // 其他好友（仅用于放虫放草）
         const visitedGids = new Set();
-        
+
         for (const f of friends) {
             const gid = toNum(f.gid);
             if (gid === state.gid) continue;
@@ -493,16 +487,16 @@ async function checkFriends() {
                 if (showDebug) {
                     console.log(`[调试] 好友 [${name}] 加入优先列表 (位置: ${priorityFriends.length})`);
                 }
-            } else if (ENABLE_PUT_BAD_THINGS && canPutBugOrWeed) {
+            } else if (CONFIG.enablePutBadThings && canPutBugOrWeed) {
                 // 没有预览信息但可以放虫放草（仅在开启放虫放草功能时）
                 otherFriends.push({ gid, name });
                 visitedGids.add(gid);
             }
         }
-        
+
         // 合并列表：优先好友在前
         const friendsToVisit = [...priorityFriends, ...otherFriends];
-        
+
         // 调试：检查目标好友位置
         if (DEBUG_FRIEND_LANDS && typeof DEBUG_FRIEND_LANDS === 'string') {
             const idx = friendsToVisit.findIndex(f => f.name === DEBUG_FRIEND_LANDS);
@@ -526,9 +520,9 @@ async function checkFriends() {
             if (showDebug) {
                 console.log(`[调试] 准备访问 [${friend.name}] (${i + 1}/${friendsToVisit.length})`);
             }
-            try { 
-                await visitFriend(friend, totalActions, state.gid); 
-            } catch (e) { 
+            try {
+                await visitFriend(friend, totalActions, state.gid);
+            } catch (e) {
                 if (showDebug) {
                     console.log(`[调试] 访问 [${friend.name}] 出错: ${e.message}`);
                 }
@@ -548,7 +542,7 @@ async function checkFriends() {
         if (totalActions.water > 0) summary.push(`浇水${totalActions.water}`);
         if (totalActions.putBug > 0) summary.push(`放虫${totalActions.putBug}`);
         if (totalActions.putWeed > 0) summary.push(`放草${totalActions.putWeed}`);
-        
+
         if (summary.length > 0) {
             log('好友', `巡查 ${friendsToVisit.length} 人 → ${summary.join('/')}`);
         }

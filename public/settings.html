@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>配置 - Farm Bot</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <a href="index.html" style="text-decoration: none; color: white; font-size: 1.5rem;">←</a>
+        <h1>系统配置</h1>
+        <div style="width: 24px;"></div>
+    </header>
+
+    <main>
+        <!-- Control Section -->
+        <div class="card" style="margin-bottom: 1rem; display: flex; gap: 1rem; justify-content: center;">
+            <button id="startBtn" class="btn-large btn-start" style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid var(--primary-color); background: rgba(46, 160, 67, 0.2); color: var(--primary-color); cursor: pointer; font-weight: bold;">
+                启动挂机
+            </button>
+            <button id="stopBtn" class="btn-large btn-stop" style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid var(--danger-color); background: rgba(218, 54, 51, 0.2); color: var(--danger-color); cursor: pointer; font-weight: bold;">
+                停止挂机
+            </button>
+        </div>
+
+        <div class="card">
+            <h3 style="margin-top: 0;">基础设置</h3>
+            <div class="form-group">
+                <label>登录 Code (必需)</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="code" class="auto-save" placeholder="输入 Code 或点击右侧扫码获取" style="flex: 1;">
+                    <button id="scanBtn" style="padding: 0 16px; background: var(--accent-color); border: none; border-radius: 6px; color: white; cursor: pointer;">
+                        扫码获取
+                    </button>
+                </div>
+                <p style="font-size: 0.8rem; color: #666; margin-top: 4px;">Code 变动后需重新启动</p>
+            </div>
+            <div class="form-group">
+                <label>平台</label>
+                <select id="platform" class="auto-save" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid #30363d; color: white; border-radius: 6px;">
+                    <option value="qq">QQ 小程序</option>
+                    <option value="wx">微信小程序</option>
+                </select>
+            </div>
+        </div>
+        
+        <!-- QR Modal -->
+        <div id="qrModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center;">
+            <div style="background: var(--card-bg); padding: 20px; border-radius: 12px; border: var(--glass-border); text-align: center; max-width: 300px; width: 90%;">
+                <h3 style="margin-top: 0;">QQ 扫码登录</h3>
+                <div id="qrPlaceholder" style="width: 200px; height: 200px; background: white; margin: 0 auto; display: flex; align-items: center; justify-content: center;">
+                    <img id="qrImage" src="" style="width: 100%; height: 100%; display: none;">
+                    <span id="qrLoading" style="color: black;">加载中...</span>
+                </div>
+                <p id="qrStatus" style="margin: 15px 0; color: var(--accent-color);">请使用手机 QQ 扫码</p>
+                <button onclick="closeQrModal()" style="padding: 8px 20px; background: transparent; border: 1px solid #666; color: #ccc; border-radius: 4px; cursor: pointer;">关闭</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 style="margin-top: 0;">策略开关</h3>
+            
+            <div class="toggle-switch">
+                <span>强制种低级作物 (白萝卜)</span>
+                <label class="switch">
+                    <input type="checkbox" id="forceLowestLevelCrop" class="auto-save">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            
+            <div class="toggle-switch">
+                <span>只在有经验时帮助好友</span>
+                <label class="switch">
+                    <input type="checkbox" id="helpOnlyWithExp" class="auto-save">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="toggle-switch">
+                <span>允许捣乱 (放虫/放草)</span>
+                <label class="switch">
+                    <input type="checkbox" id="enablePutBadThings" class="auto-save">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 style="margin-top: 0;">频率控制</h3>
+            
+            <div class="form-group">
+                <label>自家巡查间隔 (秒) - 当前: <span id="farmVal" style="color: var(--accent-color)">1</span>s</label>
+                <input type="range" id="farmCheckInterval" class="auto-save" min="1" max="60" step="1" style="width: 100%;">
+            </div>
+
+            <div class="form-group">
+                <label>好友巡查间隔 (秒) - 当前: <span id="friendVal" style="color: var(--accent-color)">10</span>s</label>
+                <input type="range" id="friendCheckInterval" class="auto-save" min="1" max="120" step="1" style="width: 100%;">
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Load Config
+        async function loadConfig() {
+            try {
+                const res = await fetch('/api/config');
+                if (res.status === 401) {
+                    window.location.href = '/login.html';
+                    return;
+                }
+                const config = await res.json();
+                
+                // Map config to UI
+                document.getElementById('platform').value = config.platform;
+                
+                // Code is not stored in config file usually, but we can try to load it from local storage or prompt user
+                // For security, server might not return the code if it doesn't want to leak it.  Let's assume user re-enters or we store in local storage.
+                const storedCode = localStorage.getItem('last_code');
+                if (storedCode) document.getElementById('code').value = storedCode;
+
+                document.getElementById('forceLowestLevelCrop').checked = config.forceLowestLevelCrop;
+                document.getElementById('helpOnlyWithExp').checked = config.helpOnlyWithExp;
+                document.getElementById('enablePutBadThings').checked = config.enablePutBadThings;
+                
+                const farmSec = config.farmCheckInterval / 1000;
+                const friendSec = config.friendCheckInterval / 1000;
+                
+                document.getElementById('farmCheckInterval').value = farmSec;
+                document.getElementById('farmVal').textContent = farmSec;
+                
+                document.getElementById('friendCheckInterval').value = friendSec;
+                document.getElementById('friendVal').textContent = friendSec;
+
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        // QR Login Logic
+        const qrModal = document.getElementById('qrModal');
+        const qrImage = document.getElementById('qrImage');
+        const qrLoading = document.getElementById('qrLoading');
+        const qrStatus = document.getElementById('qrStatus');
+        let pollTimer = null;
+
+        document.getElementById('scanBtn').onclick = startQrLogin;
+
+        function closeQrModal() {
+            qrModal.style.display = 'none';
+            if (pollTimer) clearInterval(pollTimer);
+        }
+
+        async function startQrLogin() {
+            qrModal.style.display = 'flex';
+            qrImage.style.display = 'none';
+            qrLoading.style.display = 'block';
+            qrStatus.innerText = '正在获取二维码...';
+            
+            try {
+                const res = await fetch('/api/qr/get', { method: 'POST' });
+                const data = await res.json();
+                
+                if (data.success && data.data && data.data.code) {
+                     const qCode = data.data.code;
+                     await QRCode.toDataURL(data.data.url, { margin: 1 }, (err, url) => {
+                         if (err) throw err;
+                         qrImage.src = url;
+                         qrImage.style.display = 'block';
+                         qrLoading.style.display = 'none';
+                         qrStatus.innerText = '请使用手机 QQ 扫码';
+                         
+                         // Start polling
+                         pollTimer = setInterval(() => pollQrStatus(qCode), 2000);
+                     });
+                } else {
+                    qrStatus.innerText = '获取失败: ' + (data.message || '未知错误');
+                }
+            } catch (e) {
+                console.error(e);
+                qrStatus.innerText = '网络错误';
+            }
+        }
+
+        async function pollQrStatus(qCode) {
+            try {
+                const res = await fetch('/api/qr/query', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code: qCode })
+                });
+                const data = await res.json();
+                
+                if (data.status === 'Wait') {
+                    // Do nothing, keep polling
+                } else if (data.status === 'OK') {
+                    clearInterval(pollTimer);
+                    qrStatus.innerText = '扫码成功！正在换取凭证...';
+                    
+                    // Exchange for Auth Code
+                    const authRes = await fetch('/api/qr/auth', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ ticket: data.ticket })
+                    });
+                    const authData = await authRes.json();
+                    
+                    if (authData.success) {
+                        document.getElementById('code').value = authData.code;
+                        closeQrModal();
+                        showToast('获取成功！Code 已自动填入。', 'success');
+                        autoSave(); /** Trigger Auto Save */
+                    } else {
+                        qrStatus.innerText = '换取 Code 失败: ' + authData.message;
+                    }
+                } else if (data.status === 'Used') {
+                     qrStatus.innerText = '二维码已失效，请重试';
+                     clearInterval(pollTimer);
+                } else {
+                     qrStatus.innerText = '错误: ' + data.msg;
+                     clearInterval(pollTimer);
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+        
+        // Load Script for QRCode generation (frontend lib) dynamically
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js';
+        document.head.appendChild(script);
+
+        let saveTimer = null;
+
+        document.querySelectorAll('.auto-save').forEach(el => {
+            el.addEventListener('change', autoSave);
+            el.addEventListener('input', (e) => {
+                // For sliders, update UI immediately, save debounced
+                if(e.target.id === 'farmCheckInterval') document.getElementById('farmVal').textContent = e.target.value;
+                if(e.target.id === 'friendCheckInterval') document.getElementById('friendVal').textContent = e.target.value;
+                
+                // For text input, debounce save
+                if(e.target.type === 'text') {
+                     // debounce inside autoSave is fine, but for text we might want longer delay or on blur? 
+                     // 'change' event fires on blur for text inputs, so 'change' is handled. 
+                     // 'input' fires on every keystroke. We probably don't want to save on every keystroke for Code.
+                     // Let's only save on 'change' for everything except maybe sliders if we wanted live update, but sticking to 'change' is safer for server.
+                }
+            });
+        });
+        
+        // For sliders, 'change' only fires on drop. That's good.
+        // For checkboxes, 'change' fires on click. Good.
+        // For select, 'change' fires on selection. Good.
+        // For text, 'change' fires on blur or enter. Good.
+
+        function autoSave() {
+            if (saveTimer) clearTimeout(saveTimer);
+            saveTimer = setTimeout(saveConfig, 500); 
+        }
+
+        async function saveConfig() {
+            const code = document.getElementById('code').value;
+            if (code) localStorage.setItem('last_code', code); // Sync to local storage
+
+            const payload = {
+                platform: document.getElementById('platform').value,
+                forceLowestLevelCrop: document.getElementById('forceLowestLevelCrop').checked,
+                helpOnlyWithExp: document.getElementById('helpOnlyWithExp').checked,
+                enablePutBadThings: document.getElementById('enablePutBadThings').checked,
+                farmCheckInterval: parseInt(document.getElementById('farmCheckInterval').value) * 1000,
+                friendCheckInterval: parseInt(document.getElementById('friendCheckInterval').value) * 1000,
+            };
+
+            try {
+                const res = await fetch('/api/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (res.ok) {
+                    showToast('配置已自动保存', 'success');
+                } else {
+                    showToast('保存失败', 'error');
+                }
+            } catch (e) {
+                showToast('保存错误: ' + e, 'error');
+            }
+        }
+
+        // Start/Stop Logic
+        document.getElementById('startBtn').onclick = async () => {
+            const code = document.getElementById('code').value;
+             if (!code) {
+                showToast('请填写 Code', 'error');
+                return;
+            }
+            try {
+                const res = await fetch('/api/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code })
+                });
+                const data = await res.json();
+                if (data.success) showToast('已启动', 'success');
+                else showToast('启动失败: ' + data.message, 'error');
+            } catch (e) { showToast('请求错误', 'error'); }
+        };
+
+        document.getElementById('stopBtn').onclick = async () => {
+             if(!confirm('确定要停止挂机吗？')) return;
+             try {
+                await fetch('/api/stop', { method: 'POST' });
+                showToast('已停止', 'info');
+            } catch (e) {}
+        };
+        
+        // QR Code Success: Auto save code too
+        const originalCloseHelper = closeQrModal; // capture reference if needed, or just insert logic
+        // We need to inject save into the existing QR success flow in pollQrStatus
+        
+        loadConfig();
+    </script>
+    <script src="toast.js"></script>
+</body>
+</html>

@@ -10,8 +10,16 @@ const CONFIG = {
     heartbeatInterval: 25000,    // 心跳间隔 25秒
     farmCheckInterval: 1000,    // 自己农场巡查完成后等待间隔 (可通过 --interval 修改, 最低1秒)
     friendCheckInterval: 10000,   // 好友巡查完成后等待间隔 (可通过 --friend-interval 修改, 最低1秒)
-    forceLowestLevelCrop: false,  // 开启后固定种最低等级作物（通常是白萝卜），跳过经验效率分析
+    forceLowestLevelCrop: false,  // 开启后固定种最低等级作物（白萝卜优先），跳过经验效率分析
+    
+    // Friend Module Settings
+    helpOnlyWithExp: true,      // 只在有经验时帮助好友
+    enablePutBadThings: false,  // 是否启用放虫放草功能
 };
+
+function updateConfig(newConfig) {
+    Object.assign(CONFIG, newConfig);
+}
 
 // 运行期提示文案（做了简单编码，避免明文散落）
 const RUNTIME_HINT_MASK = 23;
@@ -37,6 +45,7 @@ const PHASE_NAMES = ['未知', '种子', '发芽', '小叶', '大叶', '开花',
 
 module.exports = {
     CONFIG,
+    updateConfig,
     PlantPhase,
     PHASE_NAMES,
     RUNTIME_HINT_MASK,

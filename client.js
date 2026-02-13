@@ -87,8 +87,71 @@ function parseArgs(args) {
     return options;
 }
 
-// ============ 主函数 ============
-async function main() {
+// ============启动与停止控制 ============
+let isRunning = false;
+
+async function startClient(options) {
+    if (isRunning) {
+        throw new Error('Client is already running');
+    }
+
+    // 如果传入了 options，更新全局配置
+    if (options) {
+        if (options.platform) CONFIG.platform = options.platform;
+        if (options.farmCheckInterval) CONFIG.farmCheckInterval = options.farmCheckInterval;
+        if (options.friendCheckInterval) CONFIG.friendCheckInterval = options.friendCheckInterval;
+    }
+
+    if (!options || !options.code) {
+        throw new Error('Missing code');
+    }
+
+    isRunning = true;
+
+    // 加载 proto 定义
+    await loadProto();
+
+    // 初始化状态栏
+    initStatusBar();
+    setStatusPlatform(CONFIG.platform);
+    emitRuntimeHint(true);
+
+    const platformName = CONFIG.platform === 'wx' ? '微信' : 'QQ';
+    console.log(`[启动] ${platformName} code=${options.code.substring(0, 8)}... 农场${CONFIG.farmCheckInterval / 1000}s 好友${CONFIG.friendCheckInterval / 1000}s`);
+
+    // 连接并登录，登录成功后启动各功能模块
+    connect(options.code, async () => {
+        // 处理邀请码 (仅微信环境)
+        await processInviteCodes();
+
+        startFarmCheckLoop();
+        startFriendCheckLoop();
+        initTaskSystem();
+
+        // 启动时立即检查一次背包
+        setTimeout(() => debugSellFruits(), 5000);
+        startSellLoop(60000);  // 每分钟自动出售仓库果实
+    });
+}
+
+async function stopClient() {
+    if (!isRunning) return;
+
+    cleanupStatusBar();
+    console.log('\n[退出] 正在断开...');
+    stopFarmCheckLoop();
+    stopFriendCheckLoop();
+    cleanupTaskSystem();
+    stopSellLoop();
+    cleanup();
+    const ws = getWs();
+    if (ws) ws.close();
+
+    isRunning = false;
+}
+
+// ============ CLI 入口 ============
+async function runFromCLI() {
     const args = process.argv.slice(2);
 
     // 加载 proto 定义
@@ -112,50 +175,29 @@ async function main() {
         showHelp();
         process.exit(1);
     }
-    if (options.deleteAccountMode && (!options.name || !options.certId)) {
-        console.log('[参数] 注销账号模式必须提供 --name 和 --cert-id');
-        showHelp();
+
+    try {
+        await startClient(options);
+    } catch (e) {
+        console.error('启动失败:', e);
         process.exit(1);
     }
 
-    // 初始化状态栏
-    initStatusBar();
-    setStatusPlatform(CONFIG.platform);
-    emitRuntimeHint(true);
-
-    const platformName = CONFIG.platform === 'wx' ? '微信' : 'QQ';
-    console.log(`[启动] ${platformName} code=${options.code.substring(0, 8)}... 农场${CONFIG.farmCheckInterval / 1000}s 好友${CONFIG.friendCheckInterval / 1000}s`);
-
-    // 连接并登录，登录成功后启动各功能模块
-    connect(options.code, async () => {
-        // 处理邀请码 (仅微信环境)
-        await processInviteCodes();
-        
-        startFarmCheckLoop();
-        startFriendCheckLoop();
-        initTaskSystem();
-        
-        // 启动时立即检查一次背包
-        setTimeout(() => debugSellFruits(), 5000);
-        startSellLoop(60000);  // 每分钟自动出售仓库果实
-    });
-
     // 退出处理
-    process.on('SIGINT', () => {
-        cleanupStatusBar();
-        console.log('\n[退出] 正在断开...');
-        stopFarmCheckLoop();
-        stopFriendCheckLoop();
-        cleanupTaskSystem();
-        stopSellLoop();
-        cleanup();
-        const ws = getWs();
-        if (ws) ws.close();
+    process.on('SIGINT', async () => {
+        await stopClient();
         process.exit(0);
     });
 }
 
-main().catch(err => {
-    console.error('启动失败:', err);
-    process.exit(1);
-});
+if (require.main === module) {
+    runFromCLI().catch(err => {
+        console.error('启动失败:', err);
+        process.exit(1);
+    });
+}
+
+module.exports = {
+    startClient,
+    stopClient,
+};

@@ -49,12 +49,32 @@ function toTimeSec(val) {
 }
 
 // ============ 日志 ============
+const logListeners = [];
+
+function addLogListener(listener) {
+    logListeners.push(listener);
+}
+
+function removeLogListener(listener) {
+    const index = logListeners.indexOf(listener);
+    if (index > -1) {
+        logListeners.splice(index, 1);
+    }
+}
+
+function emitLog(message) {
+    console.log(message);
+    logListeners.forEach(listener => listener(message));
+}
+
 function log(tag, msg) {
-    console.log(`[${now()}] [${tag}] ${msg}`);
+    const message = `[${now()}] [${tag}] ${msg}`;
+    emitLog(message);
 }
 
 function logWarn(tag, msg) {
-    console.log(`[${now()}] [${tag}] ⚠ ${msg}`);
+    const message = `[${now()}] [${tag}] ⚠ ${msg}`;
+    emitLog(message);
 }
 
 // ============ 异步工具 ============
@@ -86,5 +106,6 @@ module.exports = {
     toLong, toNum, now,
     getServerTimeSec, syncServerTime, toTimeSec,
     log, logWarn, sleep,
+    addLogListener, removeLogListener,
     emitRuntimeHint,
 };
