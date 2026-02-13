@@ -11,6 +11,7 @@ let root = null;
 const types = {};
 
 async function loadProto() {
+    if (root) return; // Prevent multiple reloading
     const protoDir = path.join(__dirname, '..', 'proto');
     root = new protobuf.Root();
     await root.load([

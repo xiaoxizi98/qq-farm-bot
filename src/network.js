@@ -67,7 +67,7 @@ function sendMsgAsync(serviceName, methodName, bodyBytes, timeout = 10000) {
             reject(new Error(`连接未打开: ${methodName}`));
             return;
         }
-        
+
         const seq = clientSeq;
         const timer = setTimeout(() => {
             pendingCallbacks.delete(seq);
@@ -81,7 +81,7 @@ function sendMsgAsync(serviceName, methodName, bodyBytes, timeout = 10000) {
             if (err) reject(err);
             else resolve({ body, meta });
         });
-        
+
         if (!sent) {
             clearTimeout(timer);
             reject(new Error(`发送失败: ${methodName}`));
@@ -192,7 +192,7 @@ function handleNotify(msg) {
                     if (!item) continue;
                     const id = toNum(item.id);
                     const count = toNum(item.count);
-                    
+
                     if (id === 1101 || id === 2) {
                         userState.exp = count;
                         updateStatusLevel(userState.level, count);
@@ -380,25 +380,25 @@ function startHeartbeat() {
     if (heartbeatTimer) clearInterval(heartbeatTimer);
     lastHeartbeatResponse = Date.now();
     heartbeatMissCount = 0;
-    
+
     heartbeatTimer = setInterval(() => {
         if (!userState.gid) return;
-        
+
         // 检查上次心跳响应时间，超过 60 秒没响应说明连接有问题
         const timeSinceLastResponse = Date.now() - lastHeartbeatResponse;
         if (timeSinceLastResponse > 60000) {
             heartbeatMissCount++;
-            logWarn('心跳', `连接可能已断开 (${Math.round(timeSinceLastResponse/1000)}s 无响应, pending=${pendingCallbacks.size})`);
+            logWarn('心跳', `连接可能已断开 (${Math.round(timeSinceLastResponse / 1000)}s 无响应, pending=${pendingCallbacks.size})`);
             if (heartbeatMissCount >= 2) {
                 log('心跳', '尝试重连...');
                 // 清理待处理的回调，避免堆积
                 pendingCallbacks.forEach((cb, seq) => {
-                    try { cb(new Error('连接超时，已清理')); } catch (e) {}
+                    try { cb(new Error('连接超时，已清理')); } catch (e) { }
                 });
                 pendingCallbacks.clear();
             }
         }
-        
+
         const body = types.HeartbeatRequest.encode(types.HeartbeatRequest.create({
             gid: toLong(userState.gid),
             client_version: CONFIG.clientVersion,
@@ -449,6 +449,18 @@ function connect(code, onLoginSuccess) {
 function cleanup() {
     if (heartbeatTimer) { clearInterval(heartbeatTimer); heartbeatTimer = null; }
     pendingCallbacks.clear();
+
+    // Reset Network State
+    ws = null;
+    clientSeq = 1;
+    serverSeq = 0;
+
+    // Reset User State (Optional, but good for cleanliness)
+    userState.gid = 0;
+    userState.name = '';
+    userState.level = 0;
+    userState.gold = 0;
+    userState.exp = 0;
 }
 
 function getWs() { return ws; }
